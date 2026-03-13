@@ -11,22 +11,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Alpine container and build
+      - name: Build glibc APK in Alpine container
         run: |
-          docker run --rm -v "${{ github.workspace }}:/src" -w /src alpine:edge sh -c "
+          docker run --rm -v "${{ github.workspace }}:/src" -w /src alpine:edge sh -eux << 'EOF'
             # Install build tools
-            apk update && apk add --no-cache alpine-sdk abuild fakeroot wget
+            apk update
+            apk add --no-cache alpine-sdk abuild fakeroot wget shadow
 
-            # Create builder user
-            addgroup builder abuild
-            adduser -D -G builder builder
+            # Properly create builder group & user
+            addgroup abuild
+            adduser -D -G abuild builder
 
-            # Generate signing key as builder user
-            su builder -c 'abuild-keygen -a -i -n'
+            # Generate signing key and install public key
+            su builder -c "abuild-keygen -a -i -n"
 
-            # Build the package as builder user
-            su builder -c 'cd /src && abuild -r'
-          "
+            # Run the build as the non-root user
+            su builder -c "cd /src && abuild -r"
+          EOF
 
       - name: Upload built packages
         uses: actions/upload-artifact@v4
