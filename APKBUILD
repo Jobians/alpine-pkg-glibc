@@ -2,45 +2,49 @@
 
 pkgname="glibc"
 pkgver="2.39"
-_pkgrel="0"
 pkgrel="0"
 pkgdesc="GNU C Library compatibility layer"
 arch="aarch64"
 url="https://github.com/sgerrand/alpine-pkg-glibc"
 license="LGPL"
-source="https://github.com/sgerrand/docker-glibc-builder/releases/download/unreleased/glibc-bin-2.39-0-aarch64.tar.gz ld.so.conf"
+
+source="
+https://github.com/sgerrand/docker-glibc-builder/releases/download/unreleased/glibc-bin-2.39-0-aarch64.tar.gz
+ld.so.conf
+"
+
 subpackages="$pkgname-bin $pkgname-dev $pkgname-i18n"
 triggers="$pkgname-bin.trigger=/lib:/usr/lib:/usr/glibc-compat/lib"
 
 package() {
-  mkdir -p "$pkgdir/lib" "$pkgdir/usr/glibc-compat/lib/locale"  "$pkgdir"/usr/glibc-compat/lib64 "$pkgdir"/etc
-  cp -a "$srcdir"/usr "$pkgdir"
-  cp "$srcdir"/ld.so.conf "$pkgdir"/usr/glibc-compat/etc/ld.so.conf
-  rm "$pkgdir"/usr/glibc-compat/etc/rpc
-  rm -rf "$pkgdir"/usr/glibc-compat/bin
-  rm -rf "$pkgdir"/usr/glibc-compat/sbin
-  rm -rf "$pkgdir"/usr/glibc-compat/lib/gconv
-  rm -rf "$pkgdir"/usr/glibc-compat/lib/getconf
-  rm -rf "$pkgdir"/usr/glibc-compat/lib/audit
-  rm -rf "$pkgdir"/usr/glibc-compat/share
-  rm -rf "$pkgdir"/usr/glibc-compat/var
-  ln -s /usr/glibc-compat/lib/ld-linux-aarch64.so.1 ${pkgdir}/lib/ld-linux-aarch64.so.1
-  ln -s /usr/glibc-compat/lib/ld-linux-aarch64.so.1 ${pkgdir}/usr/glibc-compat/lib64/ld-linux-aarch64.so.1
-  ln -s /usr/glibc-compat/etc/ld.so.cache ${pkgdir}/etc/ld.so.cache
+    mkdir -p "$pkgdir/lib" "$pkgdir/usr/glibc-compat/lib/locale" "$pkgdir"/usr/glibc-compat/lib64 "$pkgdir"/etc
+    cp -a "$srcdir"/usr "$pkgdir"
+    cp "$srcdir"/ld.so.conf "$pkgdir"/usr/glibc-compat/etc/ld.so.conf
+    rm -rf "$pkgdir"/usr/glibc-compat/etc/rpc \
+           "$pkgdir"/usr/glibc-compat/bin \
+           "$pkgdir"/usr/glibc-compat/sbin \
+           "$pkgdir"/usr/glibc-compat/lib/gconv \
+           "$pkgdir"/usr/glibc-compat/lib/getconf \
+           "$pkgdir"/usr/glibc-compat/lib/audit \
+           "$pkgdir"/usr/glibc-compat/share \
+           "$pkgdir"/usr/glibc-compat/var
+    ln -s /usr/glibc-compat/lib/ld-linux-aarch64.so.1 ${pkgdir}/lib/ld-linux-aarch64.so.1
+    ln -s /usr/glibc-compat/lib/ld-linux-aarch64.so.1 ${pkgdir}/usr/glibc-compat/lib64/ld-linux-aarch64.so.1
+    ln -s /usr/glibc-compat/etc/ld.so.cache ${pkgdir}/etc/ld.so.cache
 }
 
 bin() {
-  depends="$pkgname bash libc6-compat libgcc"
-  mkdir -p "$subpkgdir"/usr/glibc-compat
-  cp -a "$srcdir"/usr/glibc-compat/bin "$subpkgdir"/usr/glibc-compat
-  cp -a "$srcdir"/usr/glibc-compat/sbin "$subpkgdir"/usr/glibc-compat
+    depends="$pkgname bash libc6-compat libgcc"
+    mkdir -p "$subpkgdir"/usr/glibc-compat
+    cp -a "$srcdir"/usr/glibc-compat/bin "$subpkgdir"/usr/glibc-compat
+    cp -a "$srcdir"/usr/glibc-compat/sbin "$subpkgdir"/usr/glibc-compat
 }
 
 i18n() {
-  depends="$pkgname-bin"
-  arch="noarch"
-  mkdir -p "$subpkgdir"/usr/glibc-compat
-  cp -a "$srcdir"/usr/glibc-compat/share "$subpkgdir"/usr/glibc-compat
+    depends="$pkgname-bin"
+    arch="noarch"
+    mkdir -p "$subpkgdir"/usr/glibc-compat
+    cp -a "$srcdir"/usr/glibc-compat/share "$subpkgdir"/usr/glibc-compat
 }
 
 sha512sums="
