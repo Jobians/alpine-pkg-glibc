@@ -14,37 +14,40 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build glibc APK in Alpine container with logs
+      - name: Build glibc APK in Alpine container
         run: |
-          docker run --rm -v "${{ github.workspace }}:/src" -w /src alpine:edge sh -eux << 'EOF'
+          docker run --rm -v "${{ github.workspace }}:/src" -w /src alpine:edge sh -eux << EOF
             # Install build tools
             apk update
             apk add --no-cache alpine-sdk abuild fakeroot wget shadow
 
             # Create builder group & user
+            echo "=== Creating builder user and group ==="
             addgroup abuild
             adduser -D -G abuild builder
 
             # Generate signing key
+            echo "=== Generating abuild key ==="
             su builder -c "abuild-keygen -a -i -n"
 
-            # Show home directory and environment for builder
+            # Show builder home directory
             echo "=== Builder home directory info ==="
-            su builder -c "echo \$HOME; ls -la \$HOME; env | grep HOME"
+            su builder -c "echo HOME=\$HOME; ls -la \$HOME; env | grep HOME"
 
-            # Run the build and log output
+            # Run abuild and log output
             echo "=== Running abuild ==="
             su builder -c "cd /src && abuild -r 2>&1 | tee /src/build.log"
 
-            # Show where the APKs were created
-            echo "=== Built APKs inside container ==="
+            # Show where APKs were created inside the container
+            echo "=== Built APKs inside builder home ==="
             su builder -c "ls -lR \$HOME/packages"
 
-            # Copy APKs to mounted workspace
+            # Copy APKs to workspace so GitHub Actions can upload them
+            echo "=== Copying APKs to /src/packages ==="
             mkdir -p /src/packages/aarch64
             cp -r /home/builder/packages/aarch64/* /src/packages/aarch64/ || true
 
-            # Show copied files
+            # Show copied files in workspace
             echo "=== Copied APKs to workspace ==="
             ls -lR /src/packages
           EOF
