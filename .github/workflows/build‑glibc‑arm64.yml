@@ -1,0 +1,35 @@
+name: Build ARM64 glibc APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Alpine container
+        run: |
+          # Use Alpine container for abuild
+          docker run --privileged --rm \
+            -v "${{ github.workspace }}:/src" \
+            -w /src/alpine-rootfs \
+            alpine:edge \
+            sh -c "
+              apk update;
+              apk add alpine-sdk abuild fakeroot wget;
+              addgroup builder abuild;
+              adduser -D builder;
+              abuild-keygen -a -i -n;
+              cd /src;
+              abuild -r;
+            "
+
+      - name: Upload built packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: glibc-arm64
+          path: packages/**/**/*.apk
