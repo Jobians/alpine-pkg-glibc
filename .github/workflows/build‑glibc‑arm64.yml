@@ -1,6 +1,8 @@
 name: Build Alpine Package
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
 
 jobs:
   build:
@@ -10,19 +12,22 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Try building the new release version
-      # This action sets up the Alpine environment and runs abuild
-      uses: acj/action-abuild@v1
-      with:
-        PACKAGE_PATH: "." # Path to the directory containing your APKBUILD file
-        # You would typically pass secrets for signing if you want to publish the package
-        # RSA_PRIVATE_KEY: ${{ secrets.RSA_PRIVATE_KEY }}
-        # RSA_PUBLIC_KEY: ${{ secrets.RSA_PUBLIC_KEY }}
+    - name: Fix git safe directory
+      run: git config --global --add safe.directory /github/workspace
 
-    - name: Upload artifact (optional)
+    - name: Setup Alpine build environment
+      run: |
+        sudo apt update
+        sudo apt install -y alpine-sdk
+        mkdir -p ~/.abuild
+        abuild-keygen -a -n
+
+    - name: Build package
+      run: |
+        abuild -r
+
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: alpine-apk-package
-        path: |
-          /home/runner/packages/**/*.apk
-          /home/runner/packages/**/*.asc
+        path: ~/packages/**/*.apk
