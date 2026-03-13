@@ -18,8 +18,8 @@ jobs:
     - name: Build the new release version
       uses: jobians/action-abuild@master
       with:
-        PACKAGE_PATH: "." # path to your APKBUILD
-        # Optionally pass kes if you want to sign packages
+        PACKAGE_PATH: "."
+        release_version: "2.39"
         rsa_private_key: ${{ secrets.RSA_PRIVATE_KEY }}
         rsa_public_key: ${{ secrets.RSA_PUBLIC_KEY }}
 
