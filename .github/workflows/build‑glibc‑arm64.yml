@@ -2,68 +2,31 @@ name: Build Alpine Package
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch:
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      INPUT_PACKAGE_PATH: "alpine-pkg-glibc"
-      INPUT_RELEASE_VERSION: "2.39"
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Setup abuild keys
-        run: |
-          mkdir -p "$GITHUB_WORKSPACE/.abuild"
-          mkdir -p "$HOME/.abuild"                                 # FIX: ensure folder exists
-          echo "${{ secrets.RSA_PRIVATE_KEY }}" > "$GITHUB_WORKSPACE/key"
-          echo "${{ secrets.RSA_PUBLIC_KEY }}" > "$GITHUB_WORKSPACE/key.pub"
-          chmod 600 "$GITHUB_WORKSPACE/key"
-          chmod 644 "$GITHUB_WORKSPACE/key.pub"
-          echo "PACKAGER_PRIVKEY=$GITHUB_WORKSPACE/key" > "$HOME/.abuild/abuild.conf"
-          sudo cp "$GITHUB_WORKSPACE/key.pub" /etc/apk/keys/
+    - name: Fix git safe directory
+      run: git config --global --add safe.directory /github/workspace
 
-      - name: Build Docker container
-        run: |
-          docker build -t action-abuild -f- . << 'EOF'
-          FROM alpine:edge
+    - name: Build the new release version
+      uses: acj/action-abuild@v1.1
+      with:
+        PACKAGE_PATH: "." # path to your APKBUILD
+        # Optionally pass keys if you want to sign packages
+        RSA_PRIVATE_KEY: ${{ secrets.RSA_PRIVATE_KEY }}
+        RSA_PUBLIC_KEY: ${{ secrets.RSA_PUBLIC_KEY }}
 
-          RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
-              apk update && \
-              apk add --no-cache git build-base alpine-sdk shadow
-
-          RUN addgroup root abuild && adduser -D -G abuild builder
-
-          COPY entrypoint.sh /entrypoint.sh
-          ENTRYPOINT ["/entrypoint.sh"]
-          EOF
-
-      - name: Create entrypoint script
-        run: |
-          cat > entrypoint.sh << 'EOS'
-          #!/bin/sh
-          set -eu
-          export GIT_CEILING_DIRECTORIES="/github/workspace"
-          cd "$GITHUB_WORKSPACE/$INPUT_PACKAGE_PATH"
-          sed -i "s/pkgver=.*/pkgver=$INPUT_RELEASE_VERSION/g" APKBUILD
-          sed -i "s/pkgrel=.*/pkgrel=0/g" APKBUILD
-          abuild -F checksum && abuild -F -r
-          EOS
-
-      - name: Run abuild in Docker
-        run: |
-          docker run --rm \
-            -v "${GITHUB_WORKSPACE}:/github/workspace" \
-            action-abuild
-
-      - name: Upload built packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: alpine-apks
-          path: alpine-pkg-glibc/packages/**/*.apk
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: alpine-apk-package
+        path: |
+          /home/runner/packages/**/*.apk
+          /home/runner/packages/**/*.asc
