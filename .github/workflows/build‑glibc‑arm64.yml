@@ -1,4 +1,4 @@
-name: Build Alpine glibc Package (ARM64)
+name: Build Alpine Package
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-arm64:
+  build:
     runs-on: ubuntu-latest
 
     env:
@@ -15,14 +15,13 @@ jobs:
       INPUT_RELEASE_VERSION: "2.39"
 
     steps:
-      # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Save abuild keys from GitHub Secrets
       - name: Setup abuild keys
         run: |
           mkdir -p "$GITHUB_WORKSPACE/.abuild"
+          mkdir -p "$HOME/.abuild"                                 # FIX: ensure folder exists
           echo "${{ secrets.RSA_PRIVATE_KEY }}" > "$GITHUB_WORKSPACE/key"
           echo "${{ secrets.RSA_PUBLIC_KEY }}" > "$GITHUB_WORKSPACE/key.pub"
           chmod 600 "$GITHUB_WORKSPACE/key"
@@ -30,50 +29,39 @@ jobs:
           echo "PACKAGER_PRIVKEY=$GITHUB_WORKSPACE/key" > "$HOME/.abuild/abuild.conf"
           sudo cp "$GITHUB_WORKSPACE/key.pub" /etc/apk/keys/
 
-      # 3️⃣ Build Alpine Docker image with build tools
       - name: Build Docker container
         run: |
           docker build -t action-abuild -f- . << 'EOF'
           FROM alpine:edge
 
-          # Add testing repo and build tools
           RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
               apk update && \
               apk add --no-cache git build-base alpine-sdk shadow
 
-          # Add abuild group and builder user
           RUN addgroup root abuild && adduser -D -G abuild builder
 
           COPY entrypoint.sh /entrypoint.sh
           ENTRYPOINT ["/entrypoint.sh"]
           EOF
 
-      # 4️⃣ Create entrypoint script for building the package
       - name: Create entrypoint script
         run: |
           cat > entrypoint.sh << 'EOS'
           #!/bin/sh
           set -eu
-
           export GIT_CEILING_DIRECTORIES="/github/workspace"
           cd "$GITHUB_WORKSPACE/$INPUT_PACKAGE_PATH"
-
-          # Update version
           sed -i "s/pkgver=.*/pkgver=$INPUT_RELEASE_VERSION/g" APKBUILD
           sed -i "s/pkgrel=.*/pkgrel=0/g" APKBUILD
-
-          # Build the package
           abuild -F checksum && abuild -F -r
           EOS
 
-      # 5️⃣ Run the build in Docker
       - name: Run abuild in Docker
         run: |
           docker run --rm \
             -v "${GITHUB_WORKSPACE}:/github/workspace" \
             action-abuild
 
-      # 6️⃣ Upload resulting APKs
       - name: Upload built packages
         uses: actions/upload-artifact@v4
         with:
