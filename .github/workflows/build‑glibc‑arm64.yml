@@ -20,8 +20,8 @@ jobs:
       with:
         PACKAGE_PATH: "." # path to your APKBUILD
         # Optionally pass keys if you want to sign packages
-        # RSA_PRIVATE_KEY: ${{ secrets.RSA_PRIVATE_KEY }}
-        # RSA_PUBLIC_KEY: ${{ secrets.RSA_PUBLIC_KEY }}
+        RSA_PRIVATE_KEY: ${{ secrets.RSA_PRIVATE_KEY }}
+        RSA_PUBLIC_KEY: ${{ secrets.RSA_PUBLIC_KEY }}
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
