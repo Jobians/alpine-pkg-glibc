@@ -16,12 +16,11 @@ jobs:
       run: git config --global --add safe.directory /github/workspace
 
     - name: Build the new release version
-      uses: acj/action-abuild@v1
+      uses: ivanvc/abuild-releaser-action@v1.2.0
       with:
-        PACKAGE_PATH: "." # path to your APKBUILD
-        # Optionally pass keys if you want to sign packages
-        RSA_PRIVATE_KEY: ${{ secrets.RSA_PRIVATE_KEY }}
-        RSA_PUBLIC_KEY: ${{ secrets.RSA_PUBLIC_KEY }}
+        author: "JOBIANSTECHIE <jobianstechie@gmail.com>"
+        rsa_private_key: ${{ secrets.RSA_PRIVATE_KEY }}
+        rsa_public_key: ${{ secrets.RSA_PUBLIC_KEY }}
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
