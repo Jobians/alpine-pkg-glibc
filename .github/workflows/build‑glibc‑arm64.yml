@@ -16,7 +16,7 @@ jobs:
       run: git config --global --add safe.directory /github/workspace
 
     - name: Build the new release version
-      uses: acj/action-abuild@v1.1
+      uses: jobians/action-abuild@main
       with:
         PACKAGE_PATH: "." # path to your APKBUILD
         # Optionally pass keys if you want to sign packages
