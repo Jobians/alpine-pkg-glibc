@@ -1,6 +1,9 @@
 name: Build ARM64 glibc APK
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -11,22 +14,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build glibc APK in Alpine container
+      - name: Build glibc APK in Alpine container with logs
         run: |
           docker run --rm -v "${{ github.workspace }}:/src" -w /src alpine:edge sh -eux << 'EOF'
             # Install build tools
             apk update
             apk add --no-cache alpine-sdk abuild fakeroot wget shadow
 
-            # Properly create builder group & user
+            # Create builder group & user
             addgroup abuild
             adduser -D -G abuild builder
 
-            # Generate signing key and install public key
+            # Generate signing key
             su builder -c "abuild-keygen -a -i -n"
 
-            # Run the build as the non-root user
-            su builder -c "cd /src && abuild -r"
+            # Show home directory and environment for builder
+            echo "=== Builder home directory info ==="
+            su builder -c "echo \$HOME; ls -la \$HOME; env | grep HOME"
+
+            # Run the build and log output
+            echo "=== Running abuild ==="
+            su builder -c "cd /src && abuild -r 2>&1 | tee /src/build.log"
+
+            # Show where the APKs were created
+            echo "=== Built APKs inside container ==="
+            su builder -c "ls -lR \$HOME/packages"
+
+            # Copy APKs to mounted workspace
+            mkdir -p /src/packages/aarch64
+            cp -r /home/builder/packages/aarch64/* /src/packages/aarch64/ || true
+
+            # Show copied files
+            echo "=== Copied APKs to workspace ==="
+            ls -lR /src/packages
           EOF
 
       - name: Upload built packages
@@ -34,3 +54,9 @@ jobs:
         with:
           name: glibc-arm64
           path: packages/**/**/*.apk
+
+      - name: Upload build logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build.log
