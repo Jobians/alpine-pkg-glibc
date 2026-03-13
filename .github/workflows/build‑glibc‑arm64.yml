@@ -1,65 +1,28 @@
-name: Build ARM64 glibc APK
+name: Build Alpine Package
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Build glibc APK in Alpine container
-        run: |
-          docker run --rm -v "${{ github.workspace }}:/src" -w /src alpine:edge sh -eux << EOF
-            # Install build tools
-            apk update
-            apk add --no-cache alpine-sdk abuild fakeroot wget shadow
+    - name: Try building the new release version
+      # This action sets up the Alpine environment and runs abuild
+      uses: acj/action-abuild@v1
+      with:
+        PACKAGE_PATH: "." # Path to the directory containing your APKBUILD file
+        # You would typically pass secrets for signing if you want to publish the package
+        # RSA_PRIVATE_KEY: ${{ secrets.RSA_PRIVATE_KEY }}
+        # RSA_PUBLIC_KEY: ${{ secrets.RSA_PUBLIC_KEY }}
 
-            # Create builder group & user
-            echo "=== Creating builder user and group ==="
-            addgroup abuild
-            adduser -D -G abuild builder
-
-            # Generate signing key
-            echo "=== Generating abuild key ==="
-            su builder -c "abuild-keygen -a -i -n"
-
-            # Show builder home directory
-            echo "=== Builder home directory info ==="
-            su builder -c "echo HOME=\$HOME; ls -la \$HOME; env | grep HOME"
-
-            # Run abuild and log output
-            echo "=== Running abuild ==="
-            su builder -c "cd /src && abuild -r 2>&1 | tee /src/build.log"
-
-            # Show where APKs were created inside the container
-            echo "=== Built APKs inside builder home ==="
-            su builder -c "ls -lR \$HOME/packages"
-
-            # Copy APKs to workspace so GitHub Actions can upload them
-            echo "=== Copying APKs to /src/packages ==="
-            mkdir -p /src/packages/aarch64
-            cp -r /home/builder/packages/aarch64/* /src/packages/aarch64/ || true
-
-            # Show copied files in workspace
-            echo "=== Copied APKs to workspace ==="
-            ls -lR /src/packages
-          EOF
-
-      - name: Upload built packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: glibc-arm64
-          path: packages/**/**/*.apk
-
-      - name: Upload build logs
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs
-          path: build.log
+    - name: Upload artifact (optional)
+      uses: actions/upload-artifact@v4
+      with:
+        name: alpine-apk-package
+        path: |
+          /home/runner/packages/**/*.apk
+          /home/runner/packages/**/*.asc
