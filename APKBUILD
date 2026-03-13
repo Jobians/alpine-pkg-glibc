@@ -8,7 +8,7 @@ pkgdesc="GNU C Library compatibility layer"
 arch="aarch64"
 url="https://github.com/sgerrand/alpine-pkg-glibc"
 license="LGPL"
-source="https://github.com/sgerrand/docker-glibc-builder/releases/download/unreleased/glibc-bin-$pkgver-$_pkgrel-aarch64.tar.gz
+source="https://github.com/sgerrand/docker-glibc-builder/releases/download/unreleased/glibc-bin-2.39-0-aarch64.tar.gz
 ld.so.conf"
 subpackages="$pkgname-bin $pkgname-dev $pkgname-i18n"
 triggers="$pkgname-bin.trigger=/lib:/usr/lib:/usr/glibc-compat/lib"
