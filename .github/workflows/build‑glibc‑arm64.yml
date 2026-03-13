@@ -15,19 +15,18 @@ jobs:
     - name: Fix git safe directory
       run: git config --global --add safe.directory /github/workspace
 
-    - name: Setup Alpine build environment
-      run: |
-        sudo apt update
-        sudo apt install -y alpine-sdk
-        mkdir -p ~/.abuild
-        abuild-keygen -a -n
-
-    - name: Build package
-      run: |
-        abuild -r
+    - name: Build the new release version
+      uses: acj/action-abuild@v1
+      with:
+        PACKAGE_PATH: "." # path to your APKBUILD
+        # Optionally pass keys if you want to sign packages
+        # RSA_PRIVATE_KEY: ${{ secrets.RSA_PRIVATE_KEY }}
+        # RSA_PUBLIC_KEY: ${{ secrets.RSA_PUBLIC_KEY }}
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: alpine-apk-package
-        path: ~/packages/**/*.apk
+        path: |
+          /home/runner/packages/**/*.apk
+          /home/runner/packages/**/*.asc
