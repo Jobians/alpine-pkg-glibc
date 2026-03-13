@@ -1,35 +1,81 @@
-name: Build Alpine Package
+name: Build Alpine glibc Package (ARM64)
 
 on:
   push:
-  pull_request:
-
-permissions:
-  contents: write
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-arm64:
     runs-on: ubuntu-latest
 
+    env:
+      INPUT_PACKAGE_PATH: "alpine-pkg-glibc"
+      INPUT_RELEASE_VERSION: "2.39"
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      # 1️⃣ Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Fix git safe directory
-      run: git config --global --add safe.directory /github/workspace
+      # 2️⃣ Save abuild keys from GitHub Secrets
+      - name: Setup abuild keys
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/.abuild"
+          echo "${{ secrets.RSA_PRIVATE_KEY }}" > "$GITHUB_WORKSPACE/key"
+          echo "${{ secrets.RSA_PUBLIC_KEY }}" > "$GITHUB_WORKSPACE/key.pub"
+          chmod 600 "$GITHUB_WORKSPACE/key"
+          chmod 644 "$GITHUB_WORKSPACE/key.pub"
+          echo "PACKAGER_PRIVKEY=$GITHUB_WORKSPACE/key" > "$HOME/.abuild/abuild.conf"
+          sudo cp "$GITHUB_WORKSPACE/key.pub" /etc/apk/keys/
 
-    - name: Build the new release version
-      uses: ivanvc/abuild-releaser-action@v1.2.0
-      with:
-        author: "JOBIANSTECHIE <jobianstechie@gmail.com>"
-        rsa_private_key: ${{ secrets.RSA_PRIVATE_KEY }}
-        rsa_public_key: ${{ secrets.RSA_PUBLIC_KEY }}
-        generate_single_index_page: false
+      # 3️⃣ Build Alpine Docker image with build tools
+      - name: Build Docker container
+        run: |
+          docker build -t action-abuild -f- . << 'EOF'
+          FROM alpine:edge
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: alpine-apk-package
-        path: |
-          /home/runner/packages/**/*.apk
-          /home/runner/packages/**/*.asc
+          # Add testing repo and build tools
+          RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
+              apk update && \
+              apk add --no-cache git build-base alpine-sdk shadow
+
+          # Add abuild group and builder user
+          RUN addgroup root abuild && adduser -D -G abuild builder
+
+          COPY entrypoint.sh /entrypoint.sh
+          ENTRYPOINT ["/entrypoint.sh"]
+          EOF
+
+      # 4️⃣ Create entrypoint script for building the package
+      - name: Create entrypoint script
+        run: |
+          cat > entrypoint.sh << 'EOS'
+          #!/bin/sh
+          set -eu
+
+          export GIT_CEILING_DIRECTORIES="/github/workspace"
+          cd "$GITHUB_WORKSPACE/$INPUT_PACKAGE_PATH"
+
+          # Update version
+          sed -i "s/pkgver=.*/pkgver=$INPUT_RELEASE_VERSION/g" APKBUILD
+          sed -i "s/pkgrel=.*/pkgrel=0/g" APKBUILD
+
+          # Build the package
+          abuild -F checksum && abuild -F -r
+          EOS
+
+      # 5️⃣ Run the build in Docker
+      - name: Run abuild in Docker
+        run: |
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}:/github/workspace" \
+            action-abuild
+
+      # 6️⃣ Upload resulting APKs
+      - name: Upload built packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpine-apks
+          path: alpine-pkg-glibc/packages/**/*.apk
