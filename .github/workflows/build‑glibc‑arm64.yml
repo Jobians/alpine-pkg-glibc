@@ -34,6 +34,13 @@ jobs:
           rsa_private_key: ${{ secrets.RSA_PRIVATE_KEY }}
           rsa_public_key: ${{ secrets.RSA_PUBLIC_KEY }}
 
+      - name: Rename APKs
+        run: |
+          cd packages/github/${{ matrix.arch }}
+          for f in *.apk; do
+            mv "$f" "${f%.apk}-${{ matrix.arch }}.apk"
+          done
+
       - name: Create Release and Upload APKs
         uses: ncipollo/release-action@v1
         with:
