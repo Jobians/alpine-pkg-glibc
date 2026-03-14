@@ -41,13 +41,15 @@ package() {
 
 bin() {
     pkgdesc="GNU C Library binaries"
-    # We remove the hard dependency check for the loader here
+    # This line tells the tracer that THIS package provides the missing file
+    provides="so:ld-linux-aarch64.so.1=1"
     depends="bash libc6-compat libgcc"
     
     mkdir -p "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/bin "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/sbin "$subpkgdir"/usr/glibc-compat
 }
+
 
 i18n() {
     pkgdesc="GNU C Library i18n data"
