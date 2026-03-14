@@ -9,31 +9,30 @@ jobs:
     runs-on: ubuntu-24.04-arm
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Fix git safe directory
-      run: git config --global --add safe.directory /github/workspace
+      - name: Fix git safe directory
+        run: git config --global --add safe.directory /github/workspace
 
-    - name: Build the new release version
-      uses: jobians/action-abuild@master
-      with:
-        PACKAGE_PATH: "."
-        release_version: "2.39"
-        rsa_private_key: ${{ secrets.RSA_PRIVATE_KEY }}
-        rsa_public_key: ${{ secrets.RSA_PUBLIC_KEY }}
+      - name: Build the new release version
+        uses: jobians/action-abuild@master
+        with:
+          PACKAGE_PATH: "."
+          release_version: "2.39"
+          rsa_private_key: ${{ secrets.RSA_PRIVATE_KEY }}
+          rsa_public_key: ${{ secrets.RSA_PUBLIC_KEY }}
 
-    - name: Show APK output directory
-      run: |
-        echo "APK output directory: $HOME/packages"
-        ls -lR . || echo "No APKs found"
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: alpine-apk-package
-        # Use $HOME/packages instead of /github/home/packages
-        path: |
-          packages/**/*.apk
-          packages/**/*.asc
-          packages/**/APKINDEX.tar.gz
+      - name: Create Pre-Release and Upload APK
+        uses: ncipollo/release-action@v1
+        with:
+          tag: testing
+          name: "Testing Build"
+          body: "Automated build of Alpine glibc packages."
+          artifacts: |
+            packages/**/*.apk
+            packages/**/*.asc
+            packages/**/APKINDEX.tar.gz
+          allowUpdates: true
+          replacesArtifacts: true
+          token: ${{ secrets.GITHUB_TOKEN }}
