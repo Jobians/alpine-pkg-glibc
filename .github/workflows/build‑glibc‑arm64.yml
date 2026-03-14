@@ -36,6 +36,7 @@ jobs:
 
       - name: Rename APKs
         run: |
+          sudo chown -R $USER:$USER packages/
           cd packages/github/${{ matrix.arch }}
           for f in *.apk; do
             mv "$f" "${f%.apk}-${{ matrix.arch }}.apk"
