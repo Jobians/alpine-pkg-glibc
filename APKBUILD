@@ -1,17 +1,16 @@
 # Maintainer: Sasha Gerrand <alpine-pkgs@sgerrand.com>
-
 pkgname="glibc"
-pkgver="2.39"
+pkgver="2.42"
 pkgrel="0"
 pkgdesc="GNU C Library compatibility layer"
-arch="aarch64"
-url="https://github.com"
+arch="x86_64 aarch64"
+url="https://github.com/Jobians/alpine-glibc"
 license="LGPL"
-# !tracedeps is the key: it stops the main package from failing on the symlinks
 options="!check !scanelf !tracedeps"
 
+# Use $CARCH to dynamically select the correct tarball
 source="
-https://github.com/sgerrand/docker-glibc-builder/releases/download/unreleased/glibc-bin-2.39-0-aarch64.tar.gz
+https://github.com/Jobians/alpine-glibc/releases/download/v$pkgver/glibc-$pkgver-$pkgrel-$CARCH.tar.gz
 ld.so.conf
 "
 
@@ -23,6 +22,14 @@ package() {
     cp -a "$srcdir"/usr "$pkgdir"
     cp "$srcdir"/ld.so.conf "$pkgdir"/usr/glibc-compat/etc/ld.so.conf
     
+    # Define loader name based on architecture
+    local loader=""
+    if [ "$CARCH" = "aarch64" ]; then
+        loader="ld-linux-aarch64.so.1"
+    else
+        loader="ld-linux-x86-64.so.2"
+    fi
+
     # Cleanup files moved to subpackages
     rm -rf "$pkgdir"/usr/glibc-compat/etc/rpc \
            "$pkgdir"/usr/glibc-compat/bin \
@@ -33,18 +40,21 @@ package() {
            "$pkgdir"/usr/glibc-compat/share \
            "$pkgdir"/usr/glibc-compat/var
 
-    # Main package symlinks
-    ln -s /usr/glibc-compat/lib/ld-linux-aarch64.so.1 "$pkgdir"/lib/ld-linux-aarch64.so.1
-    ln -s /usr/glibc-compat/lib/ld-linux-aarch64.so.1 "$pkgdir"/usr/glibc-compat/lib64/ld-linux-aarch64.so.1
+    # Main package symlinks using the architecture-specific loader
+    ln -s /usr/glibc-compat/lib/$loader "$pkgdir"/lib/$loader
+    ln -s /usr/glibc-compat/lib/$loader "$pkgdir"/usr/glibc-compat/lib64/$loader
     ln -s /usr/glibc-compat/etc/ld.so.cache "$pkgdir"/etc/ld.so.cache
 }
 
 bin() {
     pkgdesc="GNU C Library binaries"
     depends="$pkgname bash libgcc"
+    
+    local loader=""
+    [ "$CARCH" = "aarch64" ] && loader="ld-linux-aarch64.so.1" || loader="ld-linux-x86-64.so.2"
 
     provides="
-        so:ld-linux-aarch64.so.1=1
+        so:$loader=1
         so:libc.so.6=6
         so:libm.so.6=6
         so:libresolv.so.2=2
@@ -65,8 +75,3 @@ i18n() {
     mkdir -p "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/share "$subpkgdir"/usr/glibc-compat
 }
-
-sha512sums="
-176a4f6dba9af88b96e7337897492093988d69f0b1c8dd88927a83318d0b7f65a226ca62b508e817569cff76927fd8639e20973cef73f477f2245351e5874d69  glibc-bin-2.39-0-aarch64.tar.gz
-2912f254f8eceed1f384a1035ad0f42f5506c609ec08c361e2c0093506724a6114732db1c67171c8561f25893c0dd5c0c1d62e8a726712216d9b45973585c9f7  ld.so.conf
-"
