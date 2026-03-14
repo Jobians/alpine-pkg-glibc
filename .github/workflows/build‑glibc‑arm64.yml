@@ -29,10 +29,7 @@ jobs:
           tag: testing
           name: "Testing Build"
           body: "Automated build of Alpine glibc packages."
-          artifacts: |
-            packages/**/*.apk
-            packages/**/*.asc
-            packages/**/APKINDEX.tar.gz
+          artifacts: packages/**/*.apk,packages/**/APKINDEX.tar.gz
           allowUpdates: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
