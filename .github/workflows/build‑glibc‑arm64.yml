@@ -23,11 +23,17 @@ jobs:
         rsa_private_key: ${{ secrets.RSA_PRIVATE_KEY }}
         rsa_public_key: ${{ secrets.RSA_PUBLIC_KEY }}
 
+    - name: Show APK output directory
+      run: |
+        echo "APK output directory: $HOME/packages"
+        ls -lR $HOME/packages || echo "No APKs found"
+
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: alpine-apk-package
+        # Use $HOME/packages instead of /github/home/packages
         path: |
-          /github/home/packages/**/*.apk
-          /github/home/packages/**/*.asc
-          /github/home/packages/**/APKINDEX.tar.gz
+          $HOME/packages/**/*.apk
+          $HOME/packages/**/*.asc
+          $HOME/packages/**/APKINDEX.tar.gz
