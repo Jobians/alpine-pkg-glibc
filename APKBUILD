@@ -41,19 +41,28 @@ package() {
 
 bin() {
     pkgdesc="GNU C Library binaries"
-    # This satisfies the 'soname' requirement for the binaries in this subpackage
-    provides="so:ld-linux-aarch64.so.1=1"
+    # List all core glibc sonames that the binaries require
+    provides="
+        so:ld-linux-aarch64.so.1=1
+        so:libc.so.6=6
+        so:libm.so.6=6
+        so:libresolv.so.2=2
+        so:librt.so.1=1
+        so:libdl.so.2=2
+        so:libpthread.so.0=0
+        so:libutil.so.1=1
+    "
     depends="bash libc6-compat libgcc"
     
     mkdir -p "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/bin "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/sbin "$subpkgdir"/usr/glibc-compat
     
-    # PHYSICAL FILE FIX: Copy the actual loader into the subpackage's /lib
-    # This prevents the "path not found" error during dependency tracing
+    # Physical file for the loader to satisfy the path check
     mkdir -p "$subpkgdir"/lib
     cp "$srcdir"/usr/glibc-compat/lib/ld-linux-aarch64.so.1 "$subpkgdir"/lib/ld-linux-aarch64.so.1
 }
+
 
 i18n() {
     pkgdesc="GNU C Library i18n data"
