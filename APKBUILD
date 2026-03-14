@@ -38,6 +38,9 @@ bin() {
     mkdir -p "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/bin "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/sbin "$subpkgdir"/usr/glibc-compat
+
+    mkdir -p "$subpkgdir"/lib
+    ln -s /usr/glibc-compat/lib/ld-linux-aarch64.so.1 "$subpkgdir"/lib/ld-linux-aarch64.so.1
 }
 
 i18n() {
