@@ -10,7 +10,7 @@ options="!check !scanelf !tracedeps"
 
 # Use $CARCH to dynamically select the correct tarball
 source="
-https://github.com/Jobians/alpine-glibc/releases/download/v$pkgver/glibc-$pkgver-$pkgrel-$CARCH.tar.gz?raw=true
+https://github.com/Jobians/alpine-glibc/unreleased/download/v$pkgver/glibc-$pkgver-$pkgrel-$CARCH.tar.gz?raw=true
 ld.so.conf
 "
 
