@@ -51,7 +51,7 @@ bin() {
         so:libpthread.so.0=0
         so:libutil.so.1=1
     "
-    depends="bash libc6-compat libgcc"
+    depends="$pkgname bash libgcc"
     
     mkdir -p "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/bin "$subpkgdir"/usr/glibc-compat
