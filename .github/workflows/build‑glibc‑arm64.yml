@@ -28,5 +28,5 @@ jobs:
       with:
         name: alpine-apk-package
         path: |
-          /home/runner/packages/**/*.apk
-          /home/runner/packages/**/*.asc
+          packages/**/*.apk
+          packages/**/*.asc
