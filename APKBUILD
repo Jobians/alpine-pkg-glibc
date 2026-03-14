@@ -7,7 +7,7 @@ pkgdesc="GNU C Library compatibility layer"
 arch="aarch64"
 url="https://github.com"
 license="LGPL"
-# Add this to ignore the dependency check for the loader
+# !scanelf is mandatory here to stop abuild from dying on glibc's unique structure
 options="!check !scanelf"
 
 source="
@@ -15,7 +15,6 @@ https://github.com/sgerrand/docker-glibc-builder/releases/download/unreleased/gl
 ld.so.conf
 "
 
-# Use the correct subpackage format for noarch
 subpackages="$pkgname-bin $pkgname-dev $pkgname-i18n:i18n:noarch"
 triggers="$pkgname-bin.trigger=/lib:/usr/lib:/usr/glibc-compat/lib"
 
@@ -24,7 +23,7 @@ package() {
     cp -a "$srcdir"/usr "$pkgdir"
     cp "$srcdir"/ld.so.conf "$pkgdir"/usr/glibc-compat/etc/ld.so.conf
     
-    # Remove things that go into subpackages or aren't needed
+    # Cleanup files moved to subpackages
     rm -rf "$pkgdir"/usr/glibc-compat/etc/rpc \
            "$pkgdir"/usr/glibc-compat/bin \
            "$pkgdir"/usr/glibc-compat/sbin \
@@ -34,6 +33,7 @@ package() {
            "$pkgdir"/usr/glibc-compat/share \
            "$pkgdir"/usr/glibc-compat/var
 
+    # Main package symlinks
     ln -s /usr/glibc-compat/lib/ld-linux-aarch64.so.1 "$pkgdir"/lib/ld-linux-aarch64.so.1
     ln -s /usr/glibc-compat/lib/ld-linux-aarch64.so.1 "$pkgdir"/usr/glibc-compat/lib64/ld-linux-aarch64.so.1
     ln -s /usr/glibc-compat/etc/ld.so.cache "$pkgdir"/etc/ld.so.cache
@@ -41,15 +41,19 @@ package() {
 
 bin() {
     pkgdesc="GNU C Library binaries"
-    # This line tells the tracer that THIS package provides the missing file
+    # This satisfies the 'soname' requirement for the binaries in this subpackage
     provides="so:ld-linux-aarch64.so.1=1"
     depends="bash libc6-compat libgcc"
     
     mkdir -p "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/bin "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/sbin "$subpkgdir"/usr/glibc-compat
+    
+    # PHYSICAL FILE FIX: Copy the actual loader into the subpackage's /lib
+    # This prevents the "path not found" error during dependency tracing
+    mkdir -p "$subpkgdir"/lib
+    cp "$srcdir"/usr/glibc-compat/lib/ld-linux-aarch64.so.1 "$subpkgdir"/lib/ld-linux-aarch64.so.1
 }
-
 
 i18n() {
     pkgdesc="GNU C Library i18n data"
