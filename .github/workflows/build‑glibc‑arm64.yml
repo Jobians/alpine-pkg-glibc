@@ -2,11 +2,22 @@ name: Build Alpine Package
 
 on:
   push:
+    branches: [main, master]
   pull_request:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04-arm
+    name: Build ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout repository
@@ -15,21 +26,21 @@ jobs:
       - name: Fix git safe directory
         run: git config --global --add safe.directory /github/workspace
 
-      - name: Build the new release version
+      - name: Build glibc ${{ matrix.arch }}
         uses: jobians/action-abuild@master
         with:
           PACKAGE_PATH: "."
-          release_version: "2.39"
+          release_version: "2.42"
           rsa_private_key: ${{ secrets.RSA_PRIVATE_KEY }}
           rsa_public_key: ${{ secrets.RSA_PUBLIC_KEY }}
 
-      - name: Create Pre-Release and Upload APK
+      - name: Create Release and Upload APKs
         uses: ncipollo/release-action@v1
         with:
-          tag: testing
-          name: "Testing Build"
-          body: "Automated build of Alpine glibc packages."
-          artifacts: packages/**/*.apk,packages/**/APKINDEX.tar.gz
+          tag: v2.42-testing
+          name: "Glibc 2.42 Build"
+          body: "Automated multi-arch build of Alpine glibc packages."
+          artifacts: "packages/**/*.apk,packages/**/APKINDEX.tar.gz"
           allowUpdates: true
-          replacesArtifacts: true
+          replacesArtifacts: true # This ensures x86_64 and aarch64 artifacts both stay in the release
           token: ${{ secrets.GITHUB_TOKEN }}
