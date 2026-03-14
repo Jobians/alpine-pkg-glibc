@@ -7,8 +7,8 @@ pkgdesc="GNU C Library compatibility layer"
 arch="aarch64"
 url="https://github.com"
 license="LGPL"
-# !scanelf is mandatory here to stop abuild from dying on glibc's unique structure
-options="!check !scanelf"
+# !tracedeps is the key: it stops the main package from failing on the symlinks
+options="!check !scanelf !tracedeps"
 
 source="
 https://github.com/sgerrand/docker-glibc-builder/releases/download/unreleased/glibc-bin-2.39-0-aarch64.tar.gz
@@ -41,9 +41,6 @@ package() {
 
 bin() {
     pkgdesc="GNU C Library binaries"
-    # This stops abuild from looking for libc.so.6/ld-linux path entirely
-    options="!tracedeps"
-    
     provides="
         so:ld-linux-aarch64.so.1=1
         so:libc.so.6=6
@@ -59,13 +56,7 @@ bin() {
     mkdir -p "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/bin "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/sbin "$subpkgdir"/usr/glibc-compat
-    
-    # We still keep this link for the final package structure
-    mkdir -p "$subpkgdir"/lib
-    ln -s /usr/glibc-compat/lib/ld-linux-aarch64.so.1 "$subpkgdir"/lib/ld-linux-aarch64.so.1
 }
-
-
 
 i18n() {
     pkgdesc="GNU C Library i18n data"
