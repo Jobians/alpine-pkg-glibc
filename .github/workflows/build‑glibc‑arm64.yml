@@ -28,6 +28,6 @@ jobs:
       with:
         name: alpine-apk-package
         path: |
-          **/*.apk
-          **/*.asc
-          **/APKINDEX.tar.gz
+          /github/home/packages/**/*.apk
+          /github/home/packages/**/*.asc
+          /github/home/packages/**/APKINDEX.tar.gz
