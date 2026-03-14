@@ -26,7 +26,7 @@ jobs:
     - name: Show APK output directory
       run: |
         echo "APK output directory: $HOME/packages"
-        ls -lR $HOME/packages || echo "No APKs found"
+        ls -lR . || echo "No APKs found"
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4
@@ -34,6 +34,6 @@ jobs:
         name: alpine-apk-package
         # Use $HOME/packages instead of /github/home/packages
         path: |
-          $HOME/packages/**/*.apk
-          $HOME/packages/**/*.asc
-          $HOME/packages/**/APKINDEX.tar.gz
+          packages/**/*.apk
+          packages/**/*.asc
+          packages/**/APKINDEX.tar.gz
