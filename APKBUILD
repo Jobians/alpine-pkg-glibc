@@ -42,6 +42,17 @@ package() {
 bin() {
     pkgdesc="GNU C Library binaries"
     depends="$pkgname bash libgcc"
+
+    provides="
+        so:ld-linux-aarch64.so.1=1
+        so:libc.so.6=6
+        so:libm.so.6=6
+        so:libresolv.so.2=2
+        so:librt.so.1=1
+        so:libdl.so.2=2
+        so:libpthread.so.0=0
+        so:libutil.so.1=1
+    "
     
     mkdir -p "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/bin "$subpkgdir"/usr/glibc-compat
