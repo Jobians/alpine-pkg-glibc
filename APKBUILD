@@ -41,7 +41,9 @@ package() {
 
 bin() {
     pkgdesc="GNU C Library binaries"
-    # List all core glibc sonames that the binaries require
+    # This stops abuild from looking for libc.so.6/ld-linux path entirely
+    options="!tracedeps"
+    
     provides="
         so:ld-linux-aarch64.so.1=1
         so:libc.so.6=6
@@ -58,10 +60,11 @@ bin() {
     cp -a "$srcdir"/usr/glibc-compat/bin "$subpkgdir"/usr/glibc-compat
     cp -a "$srcdir"/usr/glibc-compat/sbin "$subpkgdir"/usr/glibc-compat
     
-    # Physical file for the loader to satisfy the path check
+    # We still keep this link for the final package structure
     mkdir -p "$subpkgdir"/lib
-    cp "$srcdir"/usr/glibc-compat/lib/ld-linux-aarch64.so.1 "$subpkgdir"/lib/ld-linux-aarch64.so.1
+    ln -s /usr/glibc-compat/lib/ld-linux-aarch64.so.1 "$subpkgdir"/lib/ld-linux-aarch64.so.1
 }
+
 
 
 i18n() {
